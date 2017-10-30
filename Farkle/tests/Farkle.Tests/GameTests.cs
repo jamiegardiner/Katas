@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using Farkle.Domain;
 using Moq;
 using NUnit.Framework;
 
@@ -7,79 +7,37 @@ namespace Farkle.Tests
     [TestFixture]
     public class GameTests
     {
-        private int[] _diceRolled;
         private Game _classUnderTest;
+        private Mock<IScoringCalculator> _mockScoringCalculator;
 
         [SetUp]
         public void SetUp()
         {
-            _classUnderTest = new Game();
+            _mockScoringCalculator = new Mock<IScoringCalculator>();
+            _classUnderTest = new Game(_mockScoringCalculator.Object);
         }
 
         [Test]
-        public void Should_Return_Result_After_Roll()
+        public void Should_Roll_Correct_Number_Of_Dice()
         {
-            var classUnderTest = new Game();
-            Assert.That(classUnderTest.Roll(new[] { 1, 2, 3, 4, 5, 6 }), Is.InstanceOf<IResult>());
+            var die1 = new Mock<IDie>();
+            var die2 = new Mock<IDie>();
+
+            _classUnderTest.Roll(new[] { die1.Object, die2.Object });
+
+            die1.Verify(x => x.Roll());
+            die1.Verify(x => x.Roll());
         }
 
         [Test]
-        public void Should_Pass_Dice_To_Each_Scoring_Rule_On_Roll()
+        public void Should_Passed_Dice_To_Score_Calculator()
         {
-            _classUnderTest = new Game();
+            var die1 = new Mock<IDie>();
+            var die2 = new Mock<IDie>();
 
-            var rule1 = new Mock<IScoringRule>();
-            var rule2 = new Mock<IScoringRule>();
-            _diceRolled = new[] { 1, 2, 3, 4, 5, 6 };
+            _classUnderTest.Roll(new[] { die1.Object, die2.Object });
 
-            _classUnderTest.AddScoringRule(rule1.Object);
-            _classUnderTest.AddScoringRule(rule2.Object);
-
-            _classUnderTest.Roll(_diceRolled);
-
-            rule1.Verify(x => x.Calculate(_diceRolled));
-            rule2.Verify(x => x.Calculate(_diceRolled));
+            _mockScoringCalculator.Verify(x => x.Calculate(new[] { die1.Object, die2.Object }));
         }
-    }
-
-    public class Result : IResult
-    {
-    }
-
-    public interface IScoringRule
-    {
-        IResult Calculate(IEnumerable<int> diceRolled);
-    }
-
-    public interface IResult
-    {
-    }
-
-    public class Game
-    {
-        private readonly List<IScoringRule> _scoringRules;
-
-        public Game()
-        {
-            _scoringRules = new List<IScoringRule>();
-        }
-
-        public IResult Roll(int[] diceRolled)
-        {
-            foreach (var scoringRule in _scoringRules)
-            {
-                scoringRule.Calculate(diceRolled);
-            }
-            return new CombinedResult();
-        }
-
-        public void AddScoringRule(IScoringRule rule)
-        {
-            _scoringRules.Add(rule);
-        }
-    }
-
-    public class CombinedResult : IResult
-    {
     }
 }

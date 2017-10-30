@@ -41,7 +41,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CombinationResult.cs" />
+    <Compile Include="CombinedResult.cs" />
+    <Compile Include="Die.cs" />
+    <Compile Include="Game.cs" />
+    <Compile Include="IDie.cs" />
+    <Compile Include="IResult.cs" />
+    <Compile Include="IRoller.cs" />
+    <Compile Include="IRollResult.cs" />
+    <Compile Include="IScoringCalculator.cs" />
+    <Compile Include="IScoringRule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Result.cs" />
     <Compile Include="TrebleSixScore.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
