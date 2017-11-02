@@ -1,4 +1,7 @@
-﻿namespace Bowling.Domain
+﻿using System.Collections.Generic;
+using System.Linq;
+
+namespace Bowling.Domain
 {
     public class Game
     {
@@ -8,80 +11,50 @@
         }
 
         private readonly int[] _rolls = new int[21];
+        private IList<Frame> _frames = new List<Frame>();
         private int _currentRoll;
-        private int _score;
+        private const int NumberOfPins = 10;
+        private const int NumberOfFrames = 10;
 
         public void Bowled(int pins)
         {
-            _rolls[_currentRoll] = pins;
-            _currentRoll++;
+            _rolls[_currentRoll++] = pins;
         }
 
         public int Score()
         {
-            _score = 0;
-            var rollIndex = 0;
-            for (var frame = 0; frame < 10; frame++)
+            _frames = CalculateFrames();
+            return _frames.Sum(x => x.FrameScore());
+        }
+
+        private List<Frame> CalculateFrames()
+        {
+            var frames = new List<Frame>();
+            var rollCounter = new RollCounter(2, 0);
+            for (int i = 0; i < NumberOfFrames; i++)
             {
-                if (IsStrike(rollIndex))
+                if (IsStrike(rollCounter))
+                    frames.Add(new Strike(rollCounter.Index, _rolls));
+                else if (IsSpare(rollCounter))
+                    frames.Add(new Spare(rollCounter.Index, _rolls));
+                else
                 {
-                    _score += 10;
-                    AddStrikeBonus(rollIndex);
-                    rollIndex = MoveToNextFrame(rollIndex);
-                    continue;
+                    frames.Add(new Frame(rollCounter.Index, _rolls));
                 }
 
-                if (IsSpare(rollIndex))
-                {
-                    _score += 10;
-                    AddSpareBonus(rollIndex);
-                    rollIndex = MoveToNextFrame(rollIndex);
-                    continue;
-                }
-
-                _score += CalculateFrameScore(rollIndex);
-                rollIndex = MoveToNextFrame(rollIndex);
+                rollCounter = rollCounter.IncreaseRollIndex(IsStrike(rollCounter));
             }
-
-            return _score;
+            return frames;
         }
 
-        private int MoveToNextFrame(int rollIndex)
+        private bool IsSpare(RollCounter rollIndex)
         {
-            if (IsStrike(rollIndex))
-            {
-                return rollIndex + 1;
-            }
-            else
-            {
-                return rollIndex + 2;
-            }
+            return _rolls[rollIndex.Index] + _rolls[rollIndex.Index + 1] == NumberOfPins;
         }
 
-        private int CalculateFrameScore(int rollIndex)
+        private bool IsStrike(RollCounter rollCounter)
         {
-            return _rolls[rollIndex] + _rolls[rollIndex + 1];
-        }
-
-        private void AddSpareBonus(int rollIndex)
-        {
-            _score += _rolls[rollIndex + 2];
-        }
-
-        private void AddStrikeBonus(int rollIndex)
-        {
-            _score += _rolls[rollIndex + 1];
-            _score += _rolls[rollIndex + 2];
-        }
-
-        private bool IsSpare(int rollIndex)
-        {
-            return _rolls[rollIndex] + _rolls[rollIndex + 1] == 10;
-        }
-
-        private bool IsStrike(int rollIndex)
-        {
-            return _rolls[rollIndex] == 10;
+            return _rolls[rollCounter.Index] == NumberOfPins;
         }
     }
 }
